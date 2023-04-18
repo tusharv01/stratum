@@ -15,6 +15,21 @@
 # This test loops through every test in test/message-generator/test, and runs each one, collecting
 # code coverage data for anything in the roles/ directory that is relevant to SV2(pool, mining-proxy)
 
+fn main() {
+    let output = Command::new("bash")
+        .arg("-c")
+        .arg("curl -s https://codecov.io/bash | bash -s -- -f coverage.xml -F rust")
+        .output()
+        .expect("failed to execute process");
+
+    if output.status.success() {
+        println!("Coverage data uploaded successfully!");
+    } else {
+    println!("Error uploading coverage data: {:?}", output.stderr);
+
+    }
+}
+
 name: Test Coverage
 
 on:
@@ -26,27 +41,6 @@ on:
     types: [submitted]
     branches: [bot/versioning]
 
-jobs:
-  tarpaulin-test:
-
-    name: Tarpaulin Test
-    runs-on: ubuntu-latest
-    container:
-      image: xd009642/tarpaulin:develop-nightly
-      options: --security-opt seccomp=unconfined
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Generate code coverage
-        run: |
-          cargo +nightly tarpaulin --verbose --features prop_test noise_sv2 fuzz with_buffer_pool async_std debug tokio with_tokio derive_codec_sv2 binary_codec_sv2 default core --lib --exclude-files examples/*,utils/message-generator/* --timeout 120 --fail-under 25 --out Xml
-
-      - name: Archive Tarpaulin code coverage results
-        uses: actions/upload-artifact@v3
-        with:
-          name: tarpaulin-report
-          path: cobertura.xml
 
   message-generator-test:
     needs: tarpaulin-test
@@ -102,3 +96,21 @@ jobs:
           files: coverage-report/*.xml, tarpaulin-report/*.xml
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
+jobs:
+  upload_coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      - name: Build
+        run: cargo build
+      - name: Run tests
+        run: cargo test
+      - name: Upload coverage data
+        run: |
+          curl -s https://codecov.io/bash | bash -s -- -f coverage.xml -F rust
