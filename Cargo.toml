@@ -12,7 +12,6 @@ license = "MIT + Apache-2.0"
 license-file = "LICENSE.md"
 keywords = ["stratum", "mining", "bitcoin", "protocol"]
 
-[workspace]
 
 members = [
     "protocols/v1",
