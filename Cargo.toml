@@ -52,3 +52,4 @@ exclude = [
     "utils/message-generator",
     
 ]
+cargo install --package my_package
